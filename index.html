@@ -69,7 +69,7 @@
 
         // Load the GLTF model.
         const loader = new GLTFLoader();
-        loader.load('./reheart.glb', (gltf) => {
+        loader.load('reheart.glb', (gltf) => {
           model = gltf.scene;
           model.scale.set(1, 1, 1);
         });
