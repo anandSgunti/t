@@ -8,9 +8,30 @@
         body { margin: 0; overflow: hidden; }
         canvas { display: block; }
         #ARButton { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); }
+        .controls {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+            gap: 10px;
+        }
+        .controls button {
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.8);
+            border: none;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
+    <div class="controls" id="controls">
+        <button id="rotateLeft">↶</button>
+        <button id="rotateRight">↷</button>
+        <button id="zoomIn">+</button>
+        <button id="zoomOut">-</button>
+    </div>
+
     <script type="importmap">
         {
             "imports": {
@@ -33,7 +54,13 @@
         let reticle;
         let hitTestSource = null;
         let hitTestSourceRequested = false;
+        let placedModel = null;
+        let isModelPlaced = false;
 
+        // Controls state
+        const rotationSpeed = 0.1;
+        const scaleSpeed = 0.1;
+        
         init();
         animate();
 
@@ -82,7 +109,6 @@
                     model = gltf.scene;
                     model.scale.set(0.5, 0.5, 0.5);
                     model.visible = false;
-                    scene.add(model);
                 },
                 (progress) => console.log('Loading progress:', (progress.loaded / progress.total * 100) + '%'),
                 (error) => console.error('Error loading model:', error)
@@ -93,16 +119,63 @@
             controller.addEventListener('select', onSelect);
             scene.add(controller);
 
+            // Setup controls
+            setupControls();
+
             window.addEventListener('resize', onWindowResize, false);
         }
 
+        function setupControls() {
+            const controls = document.getElementById('controls');
+            
+            // Rotation controls
+            document.getElementById('rotateLeft').addEventListener('click', () => {
+                if (placedModel) {
+                    placedModel.rotation.y += rotationSpeed;
+                }
+            });
+
+            document.getElementById('rotateRight').addEventListener('click', () => {
+                if (placedModel) {
+                    placedModel.rotation.y -= rotationSpeed;
+                }
+            });
+
+            // Scale controls
+            document.getElementById('zoomIn').addEventListener('click', () => {
+                if (placedModel) {
+                    placedModel.scale.multiplyScalar(1 + scaleSpeed);
+                }
+            });
+
+            document.getElementById('zoomOut').addEventListener('click', () => {
+                if (placedModel) {
+                    placedModel.scale.multiplyScalar(1 - scaleSpeed);
+                }
+            });
+
+            // Show controls when XR session starts
+            renderer.xr.addEventListener('sessionstart', () => {
+                controls.style.display = 'flex';
+            });
+
+            // Hide controls when XR session ends
+            renderer.xr.addEventListener('sessionend', () => {
+                controls.style.display = 'none';
+            });
+        }
+
         function onSelect() {
-            if (reticle.visible && model) {
-                // Clone the model and place it at the reticle position
-                const modelClone = model.clone();
-                modelClone.position.setFromMatrixPosition(reticle.matrix);
-                modelClone.visible = true;
-                scene.add(modelClone);
+            if (reticle.visible && model && !isModelPlaced) {
+                // Place model only if it hasn't been placed yet
+                placedModel = model.clone();
+                placedModel.position.setFromMatrixPosition(reticle.matrix);
+                placedModel.visible = true;
+                scene.add(placedModel);
+                
+                // Hide reticle after placing
+                reticle.visible = false;
+                isModelPlaced = true;
             }
         }
 
@@ -131,7 +204,7 @@
                     hitTestSourceRequested = true;
                 }
 
-                if (hitTestSource) {
+                if (hitTestSource && !isModelPlaced) {
                     const hitTestResults = frame.getHitTestResults(hitTestSource);
 
                     if (hitTestResults.length) {
