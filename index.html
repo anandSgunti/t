@@ -305,15 +305,7 @@
       }
     }
 
-    // Trigger a 360° spin on the model's Y axis
-    function spinModel() {
-      if (placedModel) {
-        spinAnimationActive = true;
-        spinAnimationStartTime = performance.now();
-        spinInitialRotationY = placedModel.rotation.y;
-        spinTargetRotationY = spinInitialRotationY + Math.PI * 2;
-      }
-    }
+    
 
     function onWindowResize() {
       camera.aspect = window.innerWidth / window.innerHeight;
@@ -352,17 +344,7 @@
       }
 
       // Process spin animation if active
-      if (spinAnimationActive && placedModel) {
-        const now = performance.now();
-        const elapsed = now - spinAnimationStartTime;
-        if (elapsed < spinAnimationDuration) {
-          const progress = elapsed / spinAnimationDuration;
-          placedModel.rotation.y = spinInitialRotationY + progress * (Math.PI * 2);
-        } else {
-          placedModel.rotation.y = spinTargetRotationY;
-          spinAnimationActive = false;
-        }
-      }
+  
       renderer.render(scene, camera);
     }
   </script>
@@ -387,9 +369,7 @@
         chatResponseContainer.appendChild(thinkingAnimation);
 
         // Trigger spin if message mentions "broken heart syndrome"
-        if (userMessage.toLowerCase().includes("broken heart syndrome")) {
-          spinModel();
-        }
+        
         getChatResponse(userMessage);
         document.getElementById("user-message").value = "";
       }
