@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Interactive AR Chat</title>
   <style>
-    /* Overall layout and chat styles (from first code) */
+    /* Overall layout and chat styles */
     body {
       margin: 0;
       padding: 0;
@@ -105,7 +105,7 @@
       0%, 80%, 100% { transform: translateY(0); opacity: 0.6; }
       40% { transform: translateY(-6px); opacity: 1; }
     }
-    /* Three.js and AR-specific styles (from second code) */
+    /* Three.js and AR-specific styles */
     canvas {
       display: block;
       width: 100%;
@@ -132,7 +132,7 @@
       border-radius: 5px;
     }
   </style>
-  <!-- Three.js import map (using the versions from your second code snippet) -->
+  <!-- Three.js import map -->
   <script type="importmap">
   {
       "imports": {
@@ -148,7 +148,7 @@
   <div id="container">
     <!-- AR Scene Container using Three.js -->
     <div id="heart-container">
-      <!-- The Three.js renderer's canvas and AR UI will be injected here -->
+      <!-- The Three.js renderer’s canvas and AR UI will be injected here -->
       <div class="controls" id="controls">
         <button id="rotateLeft">↶</button>
         <button id="rotateRight">↷</button>
@@ -187,6 +187,13 @@
     let hitTestSourceRequested = false;
     let placedModel = null;
     let isModelPlaced = false;
+
+    // Spin animation state variables
+    let spinAnimationActive = false;
+    let spinAnimationStartTime = 0;
+    const spinAnimationDuration = 2000; // in milliseconds (2 seconds)
+    let spinInitialRotationY = 0;
+    let spinTargetRotationY = 0;
 
     // Controls state
     const rotationSpeed = 0.1;
@@ -310,6 +317,16 @@
       }
     }
 
+    // Function to trigger a 360° spin on the model's Y axis
+    function spinModel() {
+      if (placedModel) {
+        spinAnimationActive = true;
+        spinAnimationStartTime = performance.now();
+        spinInitialRotationY = placedModel.rotation.y;
+        spinTargetRotationY = spinInitialRotationY + Math.PI * 2;
+      }
+    }
+
     function onWindowResize() {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
@@ -345,11 +362,25 @@
           }
         }
       }
+
+      // Process spin animation if active
+      if (spinAnimationActive && placedModel) {
+        const now = performance.now();
+        const elapsed = now - spinAnimationStartTime;
+        if (elapsed < spinAnimationDuration) {
+          const progress = elapsed / spinAnimationDuration;
+          placedModel.rotation.y = spinInitialRotationY + progress * (Math.PI * 2);
+        } else {
+          placedModel.rotation.y = spinTargetRotationY;
+          spinAnimationActive = false;
+        }
+      }
+
       renderer.render(scene, camera);
     }
   </script>
 
-  <!-- Chat Functionality Script (remains the same) -->
+  <!-- Chat Functionality Script (remains the same with an added trigger for spin) -->
   <script>
     function handleKeyPress(event) {
       if (event.key === "Enter") {
@@ -370,6 +401,12 @@
         // Show thinking animation
         thinkingAnimation.style.display = "flex";
         chatResponseContainer.appendChild(thinkingAnimation);
+
+        // If the user's message includes "broken heart syndrome", trigger the spin animation
+        if (userMessage.toLowerCase().includes("broken heart syndrome")) {
+          // This will trigger the spin if the model has been placed
+          spinModel();
+        }
 
         // Call the AI chat API
         getChatResponse(userMessage);
