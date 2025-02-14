@@ -29,9 +29,9 @@
       right: 20px;
       width: 300px;
       max-width: 90%;
-      background: rgba(255, 255, 255, 0.15); /* semi-transparent */
+      background: rgba(255, 255, 255, 0.15);
       border: 1px solid rgba(255, 255, 255, 0.3);
-      backdrop-filter: blur(10px); /* glass effect */
+      backdrop-filter: blur(10px);
       border-radius: 10px;
       padding: 15px;
       z-index: 10;
@@ -70,7 +70,7 @@
     .send-button img {
       width: 20px;
       height: 20px;
-      filter: invert(1); /* makes the icon white */
+      filter: invert(1);
     }
     #chat-response-container {
       margin-top: 15px;
@@ -305,7 +305,15 @@
       }
     }
 
-    
+    // Trigger a 360° spin on the model's Y axis
+    function spinModel() {
+      if (placedModel) {
+        spinAnimationActive = true;
+        spinAnimationStartTime = performance.now();
+        spinInitialRotationY = placedModel.rotation.y;
+        spinTargetRotationY = spinInitialRotationY + Math.PI * 2;
+      }
+    }
 
     function onWindowResize() {
       camera.aspect = window.innerWidth / window.innerHeight;
@@ -344,9 +352,22 @@
       }
 
       // Process spin animation if active
-  
+      if (spinAnimationActive && placedModel) {
+        const now = performance.now();
+        const elapsed = now - spinAnimationStartTime;
+        if (elapsed < spinAnimationDuration) {
+          const progress = elapsed / spinAnimationDuration;
+          placedModel.rotation.y = spinInitialRotationY + progress * (Math.PI * 2);
+        } else {
+          placedModel.rotation.y = spinTargetRotationY;
+          spinAnimationActive = false;
+        }
+      }
       renderer.render(scene, camera);
     }
+
+    // Expose spinModel to the global scope so it can be called from non-module scripts
+    window.spinModel = spinModel;
   </script>
 
   <!-- Chat Functionality Script -->
@@ -363,13 +384,16 @@
       const thinkingAnimation = document.getElementById("thinking-animation");
 
       if (userMessage) {
+        // Clear previous response and set up UI
         chatResponseContainer.innerHTML = "";
         chatResponseContainer.style.display = "block";
         thinkingAnimation.style.display = "flex";
         chatResponseContainer.appendChild(thinkingAnimation);
 
         // Trigger spin if message mentions "broken heart syndrome"
-        
+        if (userMessage.toLowerCase().includes("broken heart syndrome")) {
+          spinModel();
+        }
         getChatResponse(userMessage);
         document.getElementById("user-message").value = "";
       }
@@ -385,10 +409,6 @@
       const decoder = new TextDecoder();
       let finalResponse = "";
       const chatResponseContainer = document.getElementById("chat-response-container");
-      const thinkingAnimation = document.getElementById("thinking-animation");
-
-      chatResponseContainer.innerHTML = "";
-      chatResponseContainer.style.display = "block";
       const chatBubble = document.createElement("div");
       chatBubble.classList.add("chat-bubble");
       chatBubble.innerText = "Thinking...";
@@ -400,6 +420,8 @@
         finalResponse += decoder.decode(value);
         chatBubble.innerText = finalResponse;
       }
+      // Hide the thinking animation once complete
+      const thinkingAnimation = document.getElementById("thinking-animation");
       thinkingAnimation.style.display = "none";
     }
   </script>
