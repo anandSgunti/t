@@ -3,42 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebXR 3D Model Display</title>
+    <title>WebGL 3D Model Viewer</title>
     <style>
-        body { margin: 0; overflow: hidden; }
-        canvas { display: block; }
-        #ARButton { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); }
-        .controls {
-            position: absolute;
-            bottom: 80px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: none;
-            gap: 10px;
+        body { 
+            margin: 0; 
+            overflow: hidden;
+            touch-action: none;
         }
-        .controls button {
-            padding: 10px;
-            background: rgba(255, 255, 255, 0.8);
-            border: none;
-            border-radius: 5px;
+        canvas { 
+            display: block; 
+        }
+        #info {
+            position: absolute;
+            top: 10px;
+            width: 100%;
+            text-align: center;
+            color: white;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 5px;
+            font-family: Arial, sans-serif;
         }
     </style>
 </head>
 <body>
-    <div class="controls" id="controls">
-        <button id="rotateLeft">↶</button>
-        <button id="rotateRight">↷</button>
-        <button id="zoomIn">+</button>
-        <button id="zoomOut">-</button>
-    </div>
+    <div id="info">Touch and drag to rotate | Pinch to zoom</div>
 
     <script type="importmap">
         {
             "imports": {
                 "three": "https://unpkg.com/three@0.132.2/build/three.module.js",
                 "three/examples/jsm/loaders/GLTFLoader": "https://unpkg.com/three@0.132.2/examples/jsm/loaders/GLTFLoader.js",
-                "three/examples/jsm/environments/RoomEnvironment": "https://unpkg.com/three@0.132.2/examples/jsm/environments/RoomEnvironment.js",
-                "three/examples/jsm/webxr/ARButton": "https://unpkg.com/three@0.132.2/examples/jsm/webxr/ARButton.js"
+                "three/examples/jsm/environments/RoomEnvironment": "https://unpkg.com/three@0.132.2/examples/jsm/environments/RoomEnvironment.js"
             }
         }
     </script>
@@ -47,59 +42,46 @@
         import * as THREE from 'three';
         import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
         import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment';
-        import { ARButton } from 'three/examples/jsm/webxr/ARButton';
 
         let camera, scene, renderer, model;
-        let controller;
-        let reticle;
-        let hitTestSource = null;
-        let hitTestSourceRequested = false;
-        let placedModel = null;
-        let isModelPlaced = false;
+        let touchX, touchY;
+        let isRotating = false;
+        let pinchDistance = 0;
+        let modelLoaded = false;
 
-        // Controls state
-        const rotationSpeed = 0.1;
-        const scaleSpeed = 0.1;
-        
         init();
         animate();
 
         function init() {
+            // Scene setup
             scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x333333);
 
-            camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
+            // Camera setup
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 5;
 
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            // Renderer setup
+            renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setPixelRatio(window.devicePixelRatio);
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.xr.enabled = true;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1;
+            renderer.outputEncoding = THREE.sRGBEncoding;
             document.body.appendChild(renderer.domElement);
 
-            // Add AR button
-            document.body.appendChild(ARButton.createButton(renderer, {
-                requiredFeatures: ['hit-test'],
-                optionalFeatures: ['dom-overlay'],
-                domOverlay: { root: document.body }
-            }));
-
             // Lights
-            const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
-            light.position.set(0.5, 1, 0.25);
-            scene.add(light);
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.9);
+            directionalLight.position.set(1, 1, 1);
+            scene.add(directionalLight);
 
             // Environment
             const pmremGenerator = new THREE.PMREMGenerator(renderer);
             const environmentMap = pmremGenerator.fromScene(new RoomEnvironment()).texture;
             scene.environment = environmentMap;
-
-            // Create reticle
-            reticle = new THREE.Mesh(
-                new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2),
-                new THREE.MeshBasicMaterial()
-            );
-            reticle.matrixAutoUpdate = false;
-            reticle.visible = false;
-            scene.add(reticle);
 
             // Load 3D model
             const loader = new GLTFLoader();
@@ -108,75 +90,83 @@
                 (gltf) => {
                     model = gltf.scene;
                     model.scale.set(0.5, 0.5, 0.5);
-                    model.visible = false;
+                    
+                    // Center the model
+                    const box = new THREE.Box3().setFromObject(model);
+                    const center = box.getCenter(new THREE.Vector3());
+                    model.position.sub(center);
+                    
+                    scene.add(model);
+                    modelLoaded = true;
                 },
                 (progress) => console.log('Loading progress:', (progress.loaded / progress.total * 100) + '%'),
                 (error) => console.error('Error loading model:', error)
             );
 
-            // Controller
-            controller = renderer.xr.getController(0);
-            controller.addEventListener('select', onSelect);
-            scene.add(controller);
-
-            // Setup controls
-            setupControls();
-
+            // Event listeners
             window.addEventListener('resize', onWindowResize, false);
-        }
-
-        function setupControls() {
-            const controls = document.getElementById('controls');
             
-            // Rotation controls
-            document.getElementById('rotateLeft').addEventListener('click', () => {
-                if (placedModel) {
-                    placedModel.rotation.y += rotationSpeed;
-                }
-            });
-
-            document.getElementById('rotateRight').addEventListener('click', () => {
-                if (placedModel) {
-                    placedModel.rotation.y -= rotationSpeed;
-                }
-            });
-
-            // Scale controls
-            document.getElementById('zoomIn').addEventListener('click', () => {
-                if (placedModel) {
-                    placedModel.scale.multiplyScalar(1 + scaleSpeed);
-                }
-            });
-
-            document.getElementById('zoomOut').addEventListener('click', () => {
-                if (placedModel) {
-                    placedModel.scale.multiplyScalar(1 - scaleSpeed);
-                }
-            });
-
-            // Show controls when XR session starts
-            renderer.xr.addEventListener('sessionstart', () => {
-                controls.style.display = 'flex';
-            });
-
-            // Hide controls when XR session ends
-            renderer.xr.addEventListener('sessionend', () => {
-                controls.style.display = 'none';
-            });
+            // Touch events
+            renderer.domElement.addEventListener('touchstart', onTouchStart, false);
+            renderer.domElement.addEventListener('touchmove', onTouchMove, false);
+            renderer.domElement.addEventListener('touchend', onTouchEnd, false);
         }
 
-        function onSelect() {
-            if (reticle.visible && model && !isModelPlaced) {
-                // Place model only if it hasn't been placed yet
-                placedModel = model.clone();
-                placedModel.position.setFromMatrixPosition(reticle.matrix);
-                placedModel.visible = true;
-                scene.add(placedModel);
-                
-                // Hide reticle after placing
-                reticle.visible = false;
-                isModelPlaced = true;
+        function onTouchStart(event) {
+            event.preventDefault();
+            isRotating = true;
+            
+            if (event.touches.length === 1) {
+                // Single touch - rotation
+                touchX = event.touches[0].clientX;
+                touchY = event.touches[0].clientY;
+            } else if (event.touches.length === 2) {
+                // Pinch gesture - zoom
+                isRotating = false;
+                const dx = event.touches[0].clientX - event.touches[1].clientX;
+                const dy = event.touches[0].clientY - event.touches[1].clientY;
+                pinchDistance = Math.sqrt(dx * dx + dy * dy);
             }
+        }
+
+        function onTouchMove(event) {
+            event.preventDefault();
+            
+            if (!modelLoaded) return;
+
+            if (event.touches.length === 1 && isRotating) {
+                // Single touch - rotation
+                const x = event.touches[0].clientX;
+                const y = event.touches[0].clientY;
+
+                const deltaX = (x - touchX) * 0.01;
+                const deltaY = (y - touchY) * 0.01;
+
+                model.rotation.y += deltaX;
+                model.rotation.x += deltaY;
+
+                touchX = x;
+                touchY = y;
+            } else if (event.touches.length === 2) {
+                // Pinch gesture - zoom
+                const dx = event.touches[0].clientX - event.touches[1].clientX;
+                const dy = event.touches[0].clientY - event.touches[1].clientY;
+                const newPinchDistance = Math.sqrt(dx * dx + dy * dy);
+
+                const scaleFactor = newPinchDistance / pinchDistance;
+                if (scaleFactor > 1.01 || scaleFactor < 0.99) {
+                    const newScale = model.scale.x * scaleFactor;
+                    if (newScale > 0.1 && newScale < 3) {
+                        model.scale.set(newScale, newScale, newScale);
+                    }
+                }
+
+                pinchDistance = newPinchDistance;
+            }
+        }
+
+        function onTouchEnd() {
+            isRotating = false;
         }
 
         function onWindowResize() {
@@ -186,37 +176,7 @@
         }
 
         function animate() {
-            renderer.setAnimationLoop(render);
-        }
-
-        function render(timestamp, frame) {
-            if (frame) {
-                const referenceSpace = renderer.xr.getReferenceSpace();
-                const session = renderer.xr.getSession();
-
-                if (hitTestSourceRequested === false) {
-                    session.requestReferenceSpace('viewer').then((referenceSpace) => {
-                        session.requestHitTestSource({ space: referenceSpace }).then((source) => {
-                            hitTestSource = source;
-                        });
-                    });
-
-                    hitTestSourceRequested = true;
-                }
-
-                if (hitTestSource && !isModelPlaced) {
-                    const hitTestResults = frame.getHitTestResults(hitTestSource);
-
-                    if (hitTestResults.length) {
-                        const hit = hitTestResults[0];
-                        reticle.visible = true;
-                        reticle.matrix.fromArray(hit.getPose(referenceSpace).transform.matrix);
-                    } else {
-                        reticle.visible = false;
-                    }
-                }
-            }
-
+            requestAnimationFrame(animate);
             renderer.render(scene, camera);
         }
     </script>
