@@ -3,10 +3,133 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebXR 3D Model Display</title>
+    <title>Interactive WebAR Model Viewer</title>
+    
+    <!-- A-Frame and AR.js -->
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    <script src="https://raw.githack.com/fcor/arjs-gestures/master/dist/gestures.js"></script>
+
     <style>
-        body { margin: 0; overflow: hidden; }
-        canvas { display: block; }
+        /* Overall Layout */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+            background: linear-gradient(180deg, #eef2f3, #cfd9df);
+        }
+
+        /* Chat UI Container */
+        #chat-container {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 320px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            box-shadow: 0px 4px 12px rgba(255, 255, 255, 0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: all 0.3s ease-in-out;
+        }
+
+        /* Chat Input Bar */
+        .chat-input-bar {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 25px;
+            padding: 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Input Field */
+        .chat-input-bar input {
+            flex: 1;
+            padding: 8px;
+            border-radius: 20px;
+            border: none;
+            background: transparent;
+            color: black;
+            font-size: 14px;
+            outline: none;
+        }
+
+        /* Send Button */
+        .send-button {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+        }
+
+        .send-button img {
+            width: 20px;
+            height: 20px;
+        }
+
+                #chat-container {
+            position: absolute;
+            top: 50%;
+            right: 20px;
+            transform: translateY(-50%);
+            width: 320px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            box-shadow: 0px 4px 12px rgba(255, 255, 255, 0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: all 0.3s ease-in-out;
+        }
+
+
+        /* Chat Response (Speech Bubble) */
+        #chat-response-container {
+            margin-top: 15px;
+            padding: 10px;
+            max-width: 90%;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            font-size: 16px;
+            color: black;
+            line-height: 1.4;
+            text-align: left;
+            display: none;
+        }
+
+        /* Thinking Animation */
+        .thinking-animation {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 5px;
+            padding: 10px;
+        }
+
+        .thinking-animation span {
+            width: 8px;
+            height: 8px;
+            background-color: black;
+            border-radius: 50%;
+            opacity: 0.6;
+            animation: bounce 1.5s infinite ease-in-out;
+        }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: translateY(0); opacity: 0.6; }
+            40% { transform: translateY(-6px); opacity: 1; }
+        }
+
         #ARButton { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); }
         .controls {
             position: absolute;
@@ -25,12 +148,35 @@
     </style>
 </head>
 <body>
+
     <div class="controls" id="controls">
         <button id="rotateLeft">↶</button>
         <button id="rotateRight">↷</button>
         <button id="zoomIn">+</button>
         <button id="zoomOut">-</button>
     </div>
+
+
+
+
+    <!-- Chat UI -->
+    <div id="chat-container">
+        <div class="chat-input-bar">
+            <input type="text" id="user-message" placeholder="Ask something..." onkeypress="handleKeyPress(event)">
+            <button class="send-button" onclick="sendMessage()">
+                <img src="https://cdn-icons-png.flaticon.com/512/786/786205.png" alt="Send">
+            </button>
+        </div>
+
+        <!-- Chat Response (Appears Below Input) -->
+        <div id="chat-response-container">
+            <div id="thinking-animation" class="thinking-animation" style="display: none;">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+    </div>
+
+
 
     <script type="importmap">
         {
@@ -43,7 +189,9 @@
         }
     </script>
 
+
     <script type="module">
+
         import * as THREE from 'three';
         import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
         import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment';
@@ -219,6 +367,63 @@
 
             renderer.render(scene, camera);
         }
+
+        
+        // Handle Enter Key Press
+        function handleKeyPress(event) {
+            if (event.key === "Enter") {
+                sendMessage();
+            }
+        }
+
+        // Function to Send User Input to AI
+        function sendMessage() {
+            const userMessage = document.getElementById("user-message").value;
+            const chatResponseContainer = document.getElementById("chat-response-container");
+            const thinkingAnimation = document.getElementById("thinking-animation");
+
+            if (userMessage) {
+                chatResponseContainer.innerHTML = "";
+                chatResponseContainer.style.display = "block";
+                thinkingAnimation.style.display = "flex";
+                chatResponseContainer.appendChild(thinkingAnimation);
+                getChatResponse(userMessage);
+                document.getElementById("user-message").value = "";
+            }
+        }
+
+        // Chatbot API Integration (Streaming AI Response)
+        async function getChatResponse(userMessage) {
+            const response = await fetch("https://ari-b6xq.onrender.com/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message: userMessage })
+            });
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let finalResponse = "";
+            const chatResponseContainer = document.getElementById("chat-response-container");
+            const thinkingAnimation = document.getElementById("thinking-animation");
+
+            chatResponseContainer.innerHTML = "";
+            chatResponseContainer.style.display = "block";
+
+            const chatBubble = document.createElement("div");
+            chatBubble.classList.add("chat-bubble");
+            chatBubble.innerText = "Thinking...";
+            chatResponseContainer.appendChild(chatBubble);
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                finalResponse += decoder.decode(value);
+                chatBubble.innerText = finalResponse;
+            }
+
+            thinkingAnimation.style.display = "none";
+        }
     </script>
+
 </body>
 </html>
