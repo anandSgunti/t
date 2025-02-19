@@ -183,6 +183,7 @@
     // Controls state for on-screen buttons
     const rotationSpeed = 0.1;
     const scaleSpeed = 0.1;
+    const clock = new THREE.Clock(); // ✅ Ensure clock is initialized here
     
     init();
     animate();
@@ -341,7 +342,6 @@
 }
 
 // Start the animation loop
-const clock = new THREE.Clock();
 animate();
 
     function render(timestamp, frame) {
