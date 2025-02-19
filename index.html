@@ -179,14 +179,13 @@
     const spinAnimationDuration = 2000; // 2 seconds
     let spinInitialRotationY = 0;
     let spinTargetRotationY = 0;
-    let mixer;
 
     // Controls state for on-screen buttons
     const rotationSpeed = 0.1;
     const scaleSpeed = 0.1;
-    const clock = new THREE.Clock(); // ✅ Ensure clock is initialized here
     
     init();
+    animate();
 
     function init() {
       scene = new THREE.Scene();
@@ -227,25 +226,20 @@
       reticle.matrixAutoUpdate = false;
       reticle.visible = false;
       scene.add(reticle);
-    
 
       // Load the 3D heart model
       const loader = new GLTFLoader();
       loader.load(
-        './HeartA1.glb',
+        './og.glb',
         (gltf) => {
           model = gltf.scene;
           model.scale.set(0.5, 0.5, 0.5);
           model.visible = false;
-          scene.add(model);
         },
-       
         (progress) =>
           console.log('Loading progress:', (progress.loaded / progress.total * 100) + '%'),
         (error) => console.error('Error loading model:', error)
       );
-
-
 
       // Set up AR controller for placing the model
       controller = renderer.xr.getController(0);
@@ -328,16 +322,8 @@
     }
 
     function animate() {
-  requestAnimationFrame(animate);
-  
-  const delta = clock.getDelta(); // Get the time elapsed since the last frame
-  if (mixer) mixer.update(delta); // Update the animation mixer
-
-  renderer.render(scene, camera);
-}
-
-// Start the animation loop
-animate();
+      renderer.setAnimationLoop(render);
+    }
 
     function render(timestamp, frame) {
       if (frame) {
