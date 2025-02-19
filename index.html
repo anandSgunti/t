@@ -179,6 +179,7 @@
     const spinAnimationDuration = 2000; // 2 seconds
     let spinInitialRotationY = 0;
     let spinTargetRotationY = 0;
+    let mixer;
 
     // Controls state for on-screen buttons
     const rotationSpeed = 0.1;
@@ -226,7 +227,7 @@
       reticle.matrixAutoUpdate = false;
       reticle.visible = false;
       scene.add(reticle);
-      let mixer;
+    
 
       // Load the 3D heart model
       const loader = new GLTFLoader();
