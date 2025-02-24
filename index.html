@@ -389,15 +389,12 @@
   <!-- Chat Functionality Script -->
   <script>
 
-    function playHeartAnimation() {
-      if (placedModel && mixer && currentAnimation) {
-        // Reset and play the animation
+    window.playHeartAnimation = () => {
+    if (placedModel && mixer && currentAnimation) {
         currentAnimation.reset();
         currentAnimation.play();
-        
-        // Optional: Also trigger the spin animation
-      }
     }
+};
     
     function handleKeyPress(event) {
       if (event.key === "Enter") {
@@ -420,7 +417,7 @@
         // Trigger spin if message mentions "broken heart syndrome"
         if (userMessage.toLowerCase().includes("broken heart syndrome")) {
           
-          playHeartAnimation();
+          window.playHeartAnimation();
         }
         getChatResponse(userMessage);
         document.getElementById("user-message").value = "";
