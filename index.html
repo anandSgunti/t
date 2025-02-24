@@ -392,59 +392,53 @@
     }
 };
     
-    function handleKeyPress(event) {
-      if (event.key === "Enter") {
-        sendMessage();
-      }
-    }
+window.sendMessage = function() {
+    const userMessage = document.getElementById("user-message").value;
+    const chatResponseContainer = document.getElementById("chat-response-container");
+    const thinkingAnimation = document.getElementById("thinking-animation");
 
-    function sendMessage() {
-      const userMessage = document.getElementById("user-message").value;
-      const chatResponseContainer = document.getElementById("chat-response-container");
-      const thinkingAnimation = document.getElementById("thinking-animation");
-
-      if (userMessage) {
+    if (userMessage) {
         // Clear previous response and set up UI
         chatResponseContainer.innerHTML = "";
         chatResponseContainer.style.display = "block";
         thinkingAnimation.style.display = "flex";
         chatResponseContainer.appendChild(thinkingAnimation);
 
-        // Trigger spin if message mentions "broken heart syndrome"
+        // Trigger animation if message mentions "broken heart syndrome"
         if (userMessage.toLowerCase().includes("broken heart syndrome")) {
-          
-          window.playHeartAnimation();
+            window.playHeartAnimation(); // Use the window-exposed function
         }
         getChatResponse(userMessage);
         document.getElementById("user-message").value = "";
-      }
     }
+};
 
-    async function getChatResponse(userMessage) {
-      const response = await fetch("https://ari-b6xq.onrender.com/chat", {
+// Make getChatResponse globally available as well
+window.getChatResponse = async function(userMessage) {
+    const response = await fetch("https://ari-b6xq.onrender.com/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: userMessage })
-      });
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let finalResponse = "";
-      const chatResponseContainer = document.getElementById("chat-response-container");
-      const chatBubble = document.createElement("div");
-      chatBubble.classList.add("chat-bubble");
-      chatBubble.innerText = "Thinking...";
-      chatResponseContainer.appendChild(chatBubble);
+    });
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let finalResponse = "";
+    const chatResponseContainer = document.getElementById("chat-response-container");
+    const chatBubble = document.createElement("div");
+    chatBubble.classList.add("chat-bubble");
+    chatBubble.innerText = "Thinking...";
+    chatResponseContainer.appendChild(chatBubble);
 
-      while (true) {
+    while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         finalResponse += decoder.decode(value);
         chatBubble.innerText = finalResponse;
-      }
-      // Hide the thinking animation once complete
-      const thinkingAnimation = document.getElementById("thinking-animation");
-      thinkingAnimation.style.display = "none";
     }
+    // Hide the thinking animation once complete
+    const thinkingAnimation = document.getElementById("thinking-animation");
+    thinkingAnimation.style.display = "none";
+};
   </script>
 </body>
 </html>
