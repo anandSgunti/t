@@ -384,10 +384,7 @@
     // Expose functions to global scope
     window.spinModel = spinModel;
     
-  </script>
-
-  <!-- Chat Functionality Script -->
-  <script>
+    
     function handleKeyPress(event) {
       if (event.key === "Enter") {
         sendMessage();
@@ -408,7 +405,8 @@
 
         // Trigger spin if message mentions "broken heart syndrome"
         if (userMessage.toLowerCase().includes("broken heart syndrome")) {
-          spinModel();
+          
+          playHeartAnimation();
         }
         getChatResponse(userMessage);
         document.getElementById("user-message").value = "";
