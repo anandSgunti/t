@@ -306,7 +306,7 @@
         if (animations.length > 0) {
           mixer = new THREE.AnimationMixer(placedModel);
           currentAnimation = mixer.clipAction(animations[0]);
-          currentAnimation.setLoop(THREE.LoopRepeat);
+          currentAnimation.setLoop(THREE.LoopOnce);
           currentAnimation.clampWhenFinished = true;
         }
         
