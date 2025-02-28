@@ -200,9 +200,9 @@
       arButton.id = "ARButton";
       document.getElementById('heart-container').appendChild(arButton);
 
-      const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
-      light.position.set(0.5, 1, 0.25);
-      scene.add(light);
+      // const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
+      // light.position.set(0.5, 1, 0.25);
+      // scene.add(light);
 
       const pmremGenerator = new THREE.PMREMGenerator(renderer);
       const environmentMap = pmremGenerator.fromScene(new RoomEnvironment()).texture;
@@ -222,7 +222,7 @@
         './animation.glb',
         (gltf) => {
           model = gltf.scene;
-          model.scale.set(0.5, 0.5, 0.5);
+          model.scale.set(1, 1, 1);
           model.visible = false;
 
           // Store animations
