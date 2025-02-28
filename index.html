@@ -215,8 +215,8 @@
   scene.add(ambientLight);
 
   // Add directional light for direct illumination
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 2.5);
-  directionalLight.position.set(1, 1, 1); // Adjust as needed
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 2);
+  directionalLight.position.set(1, 0, 1); // Adjust as needed
   scene.add(directionalLight);
 
   const fillLight = new THREE.DirectionalLight(0xffffff, 1.0);
