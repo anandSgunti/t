@@ -183,72 +183,82 @@
     animate();
 
     function init() {
-      scene = new THREE.Scene();
-      camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
 
-      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-      renderer.setPixelRatio(window.devicePixelRatio);
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.xr.enabled = true;
-      document.getElementById('heart-container').appendChild(renderer.domElement);
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.xr.enabled = true;
+  document.getElementById('heart-container').appendChild(renderer.domElement);
 
-      const arButton = ARButton.createButton(renderer, {
-        requiredFeatures: ['hit-test'],
-        optionalFeatures: ['dom-overlay'],
-        domOverlay: { root: document.body }
-      });
-      arButton.id = "ARButton";
-      document.getElementById('heart-container').appendChild(arButton);
+  // Set tone mapping and exposure
+  renderer.toneMapping = THREE.LinearToneMapping;
+  renderer.toneMappingExposure = 0;
 
-      // const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
-      // light.position.set(0.5, 1, 0.25);
-      // scene.add(light);
+  const arButton = ARButton.createButton(renderer, {
+    requiredFeatures: ['hit-test'],
+    optionalFeatures: ['dom-overlay'],
+    domOverlay: { root: document.body }
+  });
+  arButton.id = "ARButton";
+  document.getElementById('heart-container').appendChild(arButton);
 
-      const pmremGenerator = new THREE.PMREMGenerator(renderer);
-      const environmentMap = pmremGenerator.fromScene(new RoomEnvironment()).texture;
-      scene.environment = environmentMap;
+  const pmremGenerator = new THREE.PMREMGenerator(renderer);
+  const environmentMap = pmremGenerator.fromScene(new RoomEnvironment()).texture;
+  scene.environment = environmentMap;
 
-      reticle = new THREE.Mesh(
-        new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2),
-        new THREE.MeshBasicMaterial()
-      );
-      reticle.matrixAutoUpdate = false;
-      reticle.visible = false;
-      scene.add(reticle);
+  // Add ambient light
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+  scene.add(ambientLight);
 
-      // Enhanced model loading with animation support
-      const loader = new GLTFLoader();
-      loader.load(
-        './animation.glb',
-        (gltf) => {
-          model = gltf.scene;
-          model.scale.set(1, 1, 1);
-          model.visible = false;
+  // Add directional light for direct illumination
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 2.5);
+  directionalLight.position.set(1, 1, 1); // Adjust as needed
+  scene.add(directionalLight);
 
-          // Store animations
-          animations = gltf.animations;
-          
-          // Create animation mixer
-          mixer = new THREE.AnimationMixer(model);
+  reticle = new THREE.Mesh(
+    new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2),
+    new THREE.MeshBasicMaterial()
+  );
+  reticle.matrixAutoUpdate = false;
+  reticle.visible = false;
+  scene.add(reticle);
 
-          // If there are animations, set up the first one
-          if (animations.length > 0) {
-            currentAnimation = mixer.clipAction(animations[0]);
-            currentAnimation.setLoop(THREE.LoopRepeat);
-            currentAnimation.clampWhenFinished = true;
-          }
-        },
-        (progress) => console.log('Loading progress:', (progress.loaded / progress.total * 100) + '%'),
-        (error) => console.error('Error loading model:', error)
-      );
+  // Enhanced model loading with animation support
+  const loader = new GLTFLoader();
+  loader.load(
+    './animation.glb',
+    (gltf) => {
+      model = gltf.scene;
+      model.scale.set(1, 1, 1);
+      model.visible = false;
 
-      controller = renderer.xr.getController(0);
-      controller.addEventListener('select', onSelect);
-      scene.add(controller);
+      // Store animations
+      animations = gltf.animations;
 
-      setupControls();
-      window.addEventListener('resize', onWindowResize, false);
-    }
+      // Create animation mixer
+      mixer = new THREE.AnimationMixer(model);
+
+      // If there are animations, set up the first one
+      if (animations.length > 0) {
+        currentAnimation = mixer.clipAction(animations[0]);
+        currentAnimation.setLoop(THREE.LoopRepeat);
+        currentAnimation.clampWhenFinished = true;
+      }
+    },
+    (progress) => console.log('Loading progress:', (progress.loaded / progress.total * 100) + '%'),
+    (error) => console.error('Error loading model:', error)
+  );
+
+  controller = renderer.xr.getController(0);
+  controller.addEventListener('select', onSelect);
+  scene.add(controller);
+
+  setupControls();
+  window.addEventListener('resize', onWindowResize, false);
+}
+
 
     function setupControls() {
       const controls = document.createElement('div');
