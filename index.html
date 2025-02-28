@@ -215,12 +215,12 @@
   scene.add(ambientLight);
 
   // Add directional light for direct illumination
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 2);
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
   directionalLight.position.set(1, 0, 1); // Adjust as needed
   scene.add(directionalLight);
 
   const fillLight = new THREE.DirectionalLight(0xffffff, 1.0);
-  fillLight.position.set(-1, 1, 1); // This light comes from the left
+  fillLight.position.set(-1, 0, 1); // This light comes from the left
   scene.add(fillLight);
 
   reticle = new THREE.Mesh(
