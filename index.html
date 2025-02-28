@@ -266,6 +266,20 @@
 }
 
 
+model.traverse((child) => {
+  if (child.isMesh && child.material) {
+    // Apply environment map for realistic reflections
+    child.material.envMap = environmentMap;
+    child.material.envMapIntensity = 1;
+    child.material.needsUpdate = true;
+    // Optionally tweak roughness and metalness for better realism
+    child.material.roughness = 0.5;
+    child.material.metalness = 0.1;
+  }
+});
+
+
+
     function setupControls() {
       const controls = document.createElement('div');
       controls.className = 'controls';
