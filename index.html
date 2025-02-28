@@ -193,8 +193,10 @@
   document.getElementById('heart-container').appendChild(renderer.domElement);
 
   // Set tone mapping and exposure
-  renderer.toneMapping = THREE.LinearToneMapping;
-  renderer.toneMappingExposure = 2.5;
+  // renderer.toneMapping = THREE.LinearToneMapping;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+
+  renderer.toneMappingExposure = 0.75;
 
   const arButton = ARButton.createButton(renderer, {
     requiredFeatures: ['hit-test'],
