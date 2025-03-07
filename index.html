@@ -135,7 +135,6 @@
   </script>
 </head>
 <body>
-  <button id="learn-more-btn">Learn more about Broken Heart Syndrome</button>
   <div id="heart-container"></div>
   
   <div id="chat-section">
@@ -428,56 +427,8 @@
 };
 
 
-
-const questions = [
-  "What is broken heart syndrome?",
-  
-];
-
-let currentQuestionIndex = 0;
-
-// Get the learn button element and apply inline styles.
-const learnBtn = document.getElementById("learn-more-btn");
-learnBtn.style.backgroundColor = "#007BFF";
-learnBtn.style.color = "#fff";
-learnBtn.style.border = "none";
-learnBtn.style.padding = "10px 20px";
-learnBtn.style.fontSize = "16px";
-learnBtn.style.cursor = "pointer";
-learnBtn.style.borderRadius = "5px";
-
-// Button event listener for sequentially sending questions with a delay between them.
-learnBtn.addEventListener("click", function() {
-  // Disable the button immediately so the user cannot click multiple times
-  learnBtn.disabled = true;
-
-  if (currentQuestionIndex < questions.length) {
-    sendMessage(questions[currentQuestionIndex]).then(() => {
-      currentQuestionIndex++;
-      // Add a delay (e.g., 2 seconds) before re-enabling the button for the next question
-      setTimeout(() => {
-        if (currentQuestionIndex < questions.length) {
-          learnBtn.disabled = false;
-        } else {
-          // Optionally update the styling once all questions have been asked
-          learnBtn.style.backgroundColor = "#cccccc";
-          learnBtn.style.cursor = "not-allowed";
-        }
-      }, 2000); // 2000 milliseconds = 2 seconds delay
-    });
-  }
-});
-
-
-const userMessage = document.getElementById("user-message").value;
-sendMessage(userMessage);
-
-
-
-
-
-// In your main file (or wherever sendMessage is defined)
-function sendMessage(userMessage) {
+window.sendMessage = function() {
+    const userMessage = document.getElementById("user-message").value;
     const chatResponseContainer = document.getElementById("chat-response-container");
     const thinkingAnimation = document.getElementById("thinking-animation");
 
@@ -490,11 +441,12 @@ function sendMessage(userMessage) {
 
         // Trigger animation if message mentions "broken heart syndrome"
         if (userMessage.toLowerCase().includes("broken heart syndrome")) {
-            window.playHeartAnimation(); // Calling the function via the window object
+            window.playHeartAnimation(); // Use the window-exposed function
         }
         getChatResponse(userMessage);
+        document.getElementById("user-message").value = "";
     }
-}
+};
 
 // Make getChatResponse globally available as well
 window.getChatResponse = async function(userMessage) {
@@ -522,18 +474,6 @@ window.getChatResponse = async function(userMessage) {
     const thinkingAnimation = document.getElementById("thinking-animation");
     thinkingAnimation.style.display = "none";
 };
-
-window.handleKeyPress = function(event) {
-  if (event.key === "Enter") {
-    const userMessageElement = document.getElementById("user-message");
-    const userMessage = userMessageElement.value;
-    if (userMessage.trim() !== "") {
-      sendMessage(userMessage);
-      userMessageElement.value = "";
-    }
-  }
-};
-
   </script>
 </body>
 </html>
