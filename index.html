@@ -223,6 +223,10 @@
   fillLight.position.set(-1, 0, 1); // This light comes from the left
   scene.add(fillLight);
 
+  const fillLight1 = new THREE.DirectionalLight(0xffffff, 1.0);
+  fillLight1.position.set(1, 0, 1); // This light comes from the left
+  scene.add(fillLight1);
+
   reticle = new THREE.Mesh(
     new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2),
     new THREE.MeshBasicMaterial()
@@ -234,7 +238,7 @@
   // Enhanced model loading with animation support
   const loader = new GLTFLoader();
   loader.load(
-    './animation.glb',
+    './NEWAR.glb',
     (gltf) => {
       model = gltf.scene;
       model.scale.set(1, 1, 1);
