@@ -434,64 +434,100 @@ const predefinedQuestions = [
 ];
 
 let currentQuestionIndex = 0;
+let currentlyProcessing = false;
 
-// Function to send the next question in sequence
-window.sendNextQuestion = function() {
-    if (currentQuestionIndex < predefinedQuestions.length) {
+// Display question in container alongside answer for immersive experience
+window.sendNextQuestionWithDisplay = function() {
+    if (currentQuestionIndex < predefinedQuestions.length && !currentlyProcessing) {
+        currentlyProcessing = true;
         const question = predefinedQuestions[currentQuestionIndex];
-        const userMessage = document.getElementById("user-message").value = question;
+        document.getElementById("user-message").value = question;
         const chatResponseContainer = document.getElementById("chat-response-container");
         const thinkingAnimation = document.getElementById("thinking-animation");
-
-    if (userMessage) {
+        
         // Clear previous response and set up UI
         chatResponseContainer.innerHTML = "";
         chatResponseContainer.style.display = "block";
+        
+        // Create and display the question bubble first
+        const questionBubble = document.createElement("div");
+        questionBubble.classList.add("user-bubble"); // Assuming you have styling for user messages
+        questionBubble.style.backgroundColor = "#f0f0f0";
+        questionBubble.style.padding = "10px 15px";
+        questionBubble.style.borderRadius = "18px";
+        questionBubble.style.marginBottom = "10px";
+        questionBubble.style.maxWidth = "80%";
+        questionBubble.style.alignSelf = "flex-end";
+        questionBubble.style.boxShadow = "0 1px 2px rgba(0,0,0,0.1)";
+        questionBubble.innerText = question;
+        chatResponseContainer.appendChild(questionBubble);
+        
+        // Then add the thinking animation
         thinkingAnimation.style.display = "flex";
         chatResponseContainer.appendChild(thinkingAnimation);
-
-        // Trigger animation if message mentions "broken heart syndrome"
-        if (currentQuestionIndex === 1) {
-            window.playHeartAnimation(); // Use the window-exposed function
-        }
-        getChatResponse(userMessage);
-        document.getElementById("user-message").value = "";
-    }
         
+        // Trigger animation only for the second question
+        if (currentQuestionIndex === 1) {
+            if (typeof window.playHeartAnimation === 'function') {
+                window.playHeartAnimation();
+            }
+        }
+        
+        // Now get the response
+        getChatResponse(question);
         
         currentQuestionIndex++;
-        
-        // If there are more questions, set up the next one
-        if (currentQuestionIndex < predefinedQuestions.length) {
-            // Wait for the previous response to complete before sending the next question
-            setTimeout(checkResponseComplete, 1000);
-        }
     }
 };
 
-
-
-// Button to start the sequence
 function addSequenceButton() {
+    // Check if button already exists
+    if (document.getElementById('run-questions-button')) {
+        return;
+    }
+    
     const container = document.querySelector('.chat-container') || document.body;
     const button = document.createElement('button');
-    button.innerText = 'Run Predefined Questions';
+    button.id = 'run-questions-button';
+    button.innerText = 'Learn About Broken Heart Syndrome';
     button.style.margin = '10px';
-    button.style.padding = '8px 16px';
-    button.style.backgroundColor = '#4CAF50';
+    button.style.padding = '12px 20px';
+    button.style.backgroundColor = '#FF4081'; // More engaging color for AR
     button.style.color = 'white';
     button.style.border = 'none';
-    button.style.borderRadius = '4px';
+    button.style.borderRadius = '8px';
     button.style.cursor = 'pointer';
+    button.style.fontWeight = 'bold';
+    button.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+    button.style.transition = 'all 0.3s ease';
+    
+    button.onmouseover = function() {
+        this.style.transform = 'scale(1.05)';
+    };
+    
+    button.onmouseout = function() {
+        this.style.transform = 'scale(1)';
+    };
+    
     button.onclick = function() {
         currentQuestionIndex = 0;
-        window.sendNextQuestion();
+        currentlyProcessing = false;
+        this.disabled = true;
+        this.style.opacity = '0.7';
+        this.innerText = 'Learning in Progress...';
+        window.sendNextQuestionWithDisplay();
     };
+    
     container.insertBefore(button, container.firstChild);
+    console.log("AR sequence button added successfully");
 }
 
-// Call this when the page loads
-window.addEventListener('load', addSequenceButton);
+// Multiple ways to ensure the button is added
+if (document.readyState === 'complete') {
+    addSequenceButton();
+} else {
+    window.addEventListener('load', addSequenceButton);
+}
 
 
 window.sendMessage = function() {
