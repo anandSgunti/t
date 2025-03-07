@@ -426,53 +426,77 @@
     }
 };
     
-window.sendMessage = function() {
-    const userMessage = document.getElementById("user-message").value;
-    const chatResponseContainer = document.getElementById("chat-response-container");
-    const thinkingAnimation = document.getElementById("thinking-animation");
+// Add this code to your existing JavaScript
 
-    if (userMessage) {
-        // Clear previous response and set up UI
-        chatResponseContainer.innerHTML = "";
-        chatResponseContainer.style.display = "block";
-        thinkingAnimation.style.display = "flex";
-        chatResponseContainer.appendChild(thinkingAnimation);
+// Array of predefined questions
+const predefinedQuestions = [
+    "What is broken heart syndrome",
+    "How does Broken Heart Syndrome affect the human heart?", // Animation will play for this question only
+    "Who is at risk of Broken Heart Syndrome?"
+];
 
-        // Trigger animation if message mentions "broken heart syndrome"
-        if (userMessage.toLowerCase().includes("broken heart syndrome")) {
-            window.playHeartAnimation(); // Use the window-exposed function
+let currentQuestionIndex = 0;
+
+// Function to send the next question in sequence
+window.sendNextQuestion = function() {
+    if (currentQuestionIndex < predefinedQuestions.length) {
+        const question = predefinedQuestions[currentQuestionIndex];
+        document.getElementById("user-message").value = question;
+        
+        // Directly trigger animation only for the second question (index 1)
+        if (currentQuestionIndex === 1) {
+            // We'll manually trigger the animation here
+            setTimeout(function() {
+                if (typeof window.playHeartAnimation === 'function') {
+                    window.playHeartAnimation();
+                }
+            }, 500); // Short delay to ensure the animation plays after the question is sent
         }
-        getChatResponse(userMessage);
-        document.getElementById("user-message").value = "";
+        
+        window.sendMessage();
+        currentQuestionIndex++;
+        
+        // If there are more questions, set up the next one
+        if (currentQuestionIndex < predefinedQuestions.length) {
+            // Wait for the previous response to complete before sending the next question
+            setTimeout(checkResponseComplete, 1000);
+        }
     }
 };
 
-// Make getChatResponse globally available as well
-window.getChatResponse = async function(userMessage) {
-    const response = await fetch("https://ari-b6xq.onrender.com/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userMessage })
-    });
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let finalResponse = "";
-    const chatResponseContainer = document.getElementById("chat-response-container");
-    const chatBubble = document.createElement("div");
-    chatBubble.classList.add("chat-bubble");
-    chatBubble.innerText = "Thinking...";
-    chatResponseContainer.appendChild(chatBubble);
-
-    while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        finalResponse += decoder.decode(value);
-        chatBubble.innerText = finalResponse;
-    }
-    // Hide the thinking animation once complete
+// Function to check if the current response is complete
+function checkResponseComplete() {
     const thinkingAnimation = document.getElementById("thinking-animation");
-    thinkingAnimation.style.display = "none";
-};
+    if (thinkingAnimation.style.display === "none") {
+        // Response is complete, wait a moment before sending the next question
+        setTimeout(window.sendNextQuestion, 2000);
+    } else {
+        // Response still in progress, check again soon
+        setTimeout(checkResponseComplete, 1000);
+    }
+}
+
+// Button to start the sequence
+function addSequenceButton() {
+    const container = document.querySelector('.chat-container') || document.body;
+    const button = document.createElement('button');
+    button.innerText = 'Run Predefined Questions';
+    button.style.margin = '10px';
+    button.style.padding = '8px 16px';
+    button.style.backgroundColor = '#4CAF50';
+    button.style.color = 'white';
+    button.style.border = 'none';
+    button.style.borderRadius = '4px';
+    button.style.cursor = 'pointer';
+    button.onclick = function() {
+        currentQuestionIndex = 0;
+        window.sendNextQuestion();
+    };
+    container.insertBefore(button, container.firstChild);
+}
+
+// Call this when the page loads
+window.addEventListener('load', addSequenceButton);
   </script>
 </body>
 </html>
