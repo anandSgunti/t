@@ -135,12 +135,12 @@
   </script>
 </head>
 <body>
+  <button id="learn-more-btn">Learn more about Broken Heart Syndrome</button>
   <div id="heart-container"></div>
   
   <div id="chat-section">
     <h2>Ask me about Broken Heart Syndrome...</h2>
     <div class="chat-input-bar">
-    
       <input type="text" id="user-message" placeholder="Type your question..." onkeypress="handleKeyPress(event)">
       <button class="send-button" onclick="sendMessage()">
         <img src="https://cdn-icons-png.flaticon.com/512/786/786205.png" alt="Send">
@@ -295,9 +295,6 @@
         <button id="zoomIn">+</button>
         <button id="zoomOut">-</button>
         <button id="playAnimation">▶</button>
-         <button id="predefined-question1">What is broken heart syndrome?</button>
-        <button id="predefined-question2">How does Broken Heart Syndrome affect the human heart?</button>
-        <button id="predefined-question3">Who is at risk of Broken Heart Syndrome?</button>
       `;
       document.getElementById('heart-container').appendChild(controls);
 
@@ -429,154 +426,103 @@
         currentAnimation.play();
     }
 };
-    
 
 
-// Helper function to convert URLs into clickable links
-function linkify(text) {
-  const urlPattern = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
-  return text.replace(urlPattern, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
-}
 
-// Predefined Q&A data
-const predefinedQA = [
-  {
-    question: "What is broken heart syndrome?",
-    answer:
-      "Broken Heart Syndrome, clinically known as Takotsubo syndrome, is a condition where your heart muscle changes shape and suddenly weakens."
-  },
-  {
-    question: "How does Broken Heart Syndrome affect the human heart?",
-    answer:
-      "Broken heart syndrome causes your heart's main pumping chamber (the left ventricle) to change shape and get larger. The heart muscle becomes weaker, and its pumping action loses strength."
-  },
-  {
-    question: "Who is at risk of Broken Heart Syndrome?",
-    answer:
-      "Most cases occur in post-menopausal women and in people over 50. People in this category with mental health conditions like anxiety or depression have a higher risk profile."
-  }
+const questions = [
+  "What is broken heart syndrome?",
+  "How is it diagnosed?",
+  "What are the treatment options?"
 ];
 
-// Keep track of the current Q&A index
-let currentQAIndex = 0;
+let currentQuestionIndex = 0;
 
-// Function to add a chat bubble to the chat container
-function populateChat(question, answer) {
-  const chatResponseContainer = document.getElementById("chat-response-container");
+// Get the learn button element and apply inline styles.
+const learnBtn = document.getElementById("learn-more-btn");
+learnBtn.style.backgroundColor = "#007BFF";
+learnBtn.style.color = "#fff";
+learnBtn.style.border = "none";
+learnBtn.style.padding = "10px 20px";
+learnBtn.style.fontSize = "16px";
+learnBtn.style.cursor = "pointer";
+learnBtn.style.borderRadius = "5px";
 
-  // Create user bubble (simulating the user's question)
-  const userBubble = document.createElement("div");
-  userBubble.classList.add("chat-bubble", "user-bubble");
-  // Use innerHTML with linkify so any links in the question become clickable
-  userBubble.innerHTML = linkify(question);
-  chatResponseContainer.appendChild(userBubble);
+// Button event listener for sequentially sending questions with a delay between them.
+learnBtn.addEventListener("click", function() {
+  // Disable the button immediately so the user cannot click multiple times
+  learnBtn.disabled = true;
 
-  // Optionally update the search bar value
-  const userMessageInput = document.getElementById("user-message");
-  if (userMessageInput) {
-    userMessageInput.value = question;
-  }
-
-  // Create bot bubble (simulating the answer)
-  const botBubble = document.createElement("div");
-  botBubble.classList.add("chat-bubble", "bot-bubble");
-  botBubble.innerHTML = linkify(answer);
-  chatResponseContainer.appendChild(botBubble);
-  
-  // Scroll to the bottom of the chat container
-  chatResponseContainer.scrollTop = chatResponseContainer.scrollHeight;
-}
-
-// Function to handle the next Q&A button click
-function handleNextQA() {
-  if (currentQAIndex < predefinedQA.length) {
-    const qa = predefinedQA[currentQAIndex];
-    populateChat(qa.question, qa.answer);
-    currentQAIndex++;
-    
-    // Update button text if we've reached the end
-    if (currentQAIndex >= predefinedQA.length) {
-      document.getElementById("next-qa-button").textContent = "All Questions Shown";
-      document.getElementById("next-qa-button").disabled = true;
-    } else {
-      document.getElementById("next-qa-button").textContent = `Next Question (${currentQAIndex + 1}/${predefinedQA.length})`;
-    }
-  }
-}
-
-// Original chatbot function with URL clickability added
-window.getChatResponse = async function(userMessage) {
-  const response = await fetch("https://ari-b6xq.onrender.com/chat", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message: userMessage })
-  });
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let finalResponse = "";
-  const chatResponseContainer = document.getElementById("chat-response-container");
-  // Create a chat bubble for the bot's response
-  const chatBubble = document.createElement("div");
-  chatBubble.classList.add("chat-bubble", "bot-bubble");
-  chatBubble.innerHTML = "Thinking...";
-  chatResponseContainer.appendChild(chatBubble);
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    finalResponse += decoder.decode(value);
-    // Update the bubble content with linkified text
-    chatBubble.innerHTML = linkify(finalResponse);
-  }
-  // Hide the thinking animation once complete
-  const thinkingAnimation = document.getElementById("thinking-animation");
-  thinkingAnimation.style.display = "none";
-};
-
-// Existing sendMessage function remains intact
-window.sendMessage = function() {
-  const userMessage = document.getElementById("user-message").value;
-  const chatResponseContainer = document.getElementById("chat-response-container");
-  const thinkingAnimation = document.getElementById("thinking-animation");
-
-  if (userMessage) {
-    // Clear previous response and set up UI
-    chatResponseContainer.innerHTML = "";
-    chatResponseContainer.style.display = "block";
-    thinkingAnimation.style.display = "flex";
-    chatResponseContainer.appendChild(thinkingAnimation);
-
-    // Trigger animation if message mentions "broken heart syndrome"
-    if (userMessage.toLowerCase().includes("broken heart syndrome")) {
-      window.playHeartAnimation(); // Use the window-exposed function
-    }
-    getChatResponse(userMessage);
-    document.getElementById("user-message").value = "";
-  }
-};
-
-// Initialize the next Q&A button when the DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
-  // Create the next Q&A button if it doesn't exist yet
-  if (!document.getElementById("next-qa-button")) {
-    // Replace the three individual buttons with a single button
-    const buttonsContainer = document.querySelector(".predefined-questions-container") || document.body;
-    
-    // Remove any existing predefined question buttons
-    const existingButtons = document.querySelectorAll("[id^='predefined-question']");
-    existingButtons.forEach(button => button.remove());
-    
-    // Create the new button
-    const nextButton = document.createElement("button");
-    nextButton.id = "next-qa-button";
-    nextButton.className = "action-button";
-    nextButton.textContent = `Next Question (1/${predefinedQA.length})`;
-    nextButton.addEventListener("click", handleNextQA);
-    
-    // Add the button to the container
-    buttonsContainer.appendChild(nextButton);
+  if (currentQuestionIndex < questions.length) {
+    sendMessage(questions[currentQuestionIndex]).then(() => {
+      currentQuestionIndex++;
+      // Add a delay (e.g., 2 seconds) before re-enabling the button for the next question
+      setTimeout(() => {
+        if (currentQuestionIndex < questions.length) {
+          learnBtn.disabled = false;
+        } else {
+          // Optionally update the styling once all questions have been asked
+          learnBtn.style.backgroundColor = "#cccccc";
+          learnBtn.style.cursor = "not-allowed";
+        }
+      }, 2000); // 2000 milliseconds = 2 seconds delay
+    });
   }
 });
+
+
+const userMessage = document.getElementById("user-message").value;
+sendMessage(userMessage);
+
+
+
+
+
+// In your main file (or wherever sendMessage is defined)
+function sendMessage(userMessage) {
+    const chatResponseContainer = document.getElementById("chat-response-container");
+    const thinkingAnimation = document.getElementById("thinking-animation");
+
+    if (userMessage) {
+        // Clear previous response and set up UI
+        chatResponseContainer.innerHTML = "";
+        chatResponseContainer.style.display = "block";
+        thinkingAnimation.style.display = "flex";
+        chatResponseContainer.appendChild(thinkingAnimation);
+
+        // Trigger animation if message mentions "broken heart syndrome"
+        if (userMessage.toLowerCase().includes("broken heart syndrome")) {
+            window.playHeartAnimation(); // Calling the function via the window object
+        }
+        getChatResponse(userMessage);
+    }
+}
+
+// Make getChatResponse globally available as well
+window.getChatResponse = async function(userMessage) {
+    const response = await fetch("https://ari-b6xq.onrender.com/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: userMessage })
+    });
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let finalResponse = "";
+    const chatResponseContainer = document.getElementById("chat-response-container");
+    const chatBubble = document.createElement("div");
+    chatBubble.classList.add("chat-bubble");
+    chatBubble.innerText = "Thinking...";
+    chatResponseContainer.appendChild(chatBubble);
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        finalResponse += decoder.decode(value);
+        chatBubble.innerText = finalResponse;
+    }
+    // Hide the thinking animation once complete
+    const thinkingAnimation = document.getElementById("thinking-animation");
+    thinkingAnimation.style.display = "none";
+};
   </script>
 </body>
 </html>
