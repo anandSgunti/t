@@ -140,11 +140,7 @@
   <div id="chat-section">
     <h2>Ask me about Broken Heart Syndrome...</h2>
     <div class="chat-input-bar">
-      <div class="button-container">
-        <button id="predefined-question1">What is broken heart syndrome?</button>
-        <button id="predefined-question2">How does Broken Heart Syndrome affect the human heart?</button>
-        <button id="predefined-question3">Who is at risk of Broken Heart Syndrome?</button>
-      </div>
+    
       <input type="text" id="user-message" placeholder="Type your question..." onkeypress="handleKeyPress(event)">
       <button class="send-button" onclick="sendMessage()">
         <img src="https://cdn-icons-png.flaticon.com/512/786/786205.png" alt="Send">
@@ -436,7 +432,6 @@
     
 
 
-
 // Helper function to convert URLs into clickable links
 function linkify(text) {
   const urlPattern = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
@@ -462,6 +457,9 @@ const predefinedQA = [
   }
 ];
 
+// Keep track of the current Q&A index
+let currentQAIndex = 0;
+
 // Function to add a chat bubble to the chat container
 function populateChat(question, answer) {
   const chatResponseContainer = document.getElementById("chat-response-container");
@@ -484,23 +482,27 @@ function populateChat(question, answer) {
   botBubble.classList.add("chat-bubble", "bot-bubble");
   botBubble.innerHTML = linkify(answer);
   chatResponseContainer.appendChild(botBubble);
+  
+  // Scroll to the bottom of the chat container
+  chatResponseContainer.scrollTop = chatResponseContainer.scrollHeight;
 }
 
-// Attach event listeners to each predefined question button
-document.getElementById("predefined-question1").addEventListener("click", () => {
-  const qa = predefinedQA[0];
-  populateChat(qa.question, qa.answer);
-});
-
-document.getElementById("predefined-question2").addEventListener("click", () => {
-  const qa = predefinedQA[1];
-  populateChat(qa.question, qa.answer);
-});
-
-document.getElementById("predefined-question3").addEventListener("click", () => {
-  const qa = predefinedQA[2];
-  populateChat(qa.question, qa.answer);
-});
+// Function to handle the next Q&A button click
+function handleNextQA() {
+  if (currentQAIndex < predefinedQA.length) {
+    const qa = predefinedQA[currentQAIndex];
+    populateChat(qa.question, qa.answer);
+    currentQAIndex++;
+    
+    // Update button text if we've reached the end
+    if (currentQAIndex >= predefinedQA.length) {
+      document.getElementById("next-qa-button").textContent = "All Questions Shown";
+      document.getElementById("next-qa-button").disabled = true;
+    } else {
+      document.getElementById("next-qa-button").textContent = `Next Question (${currentQAIndex + 1}/${predefinedQA.length})`;
+    }
+  }
+}
 
 // Original chatbot function with URL clickability added
 window.getChatResponse = async function(userMessage) {
@@ -553,6 +555,28 @@ window.sendMessage = function() {
   }
 };
 
+// Initialize the next Q&A button when the DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+  // Create the next Q&A button if it doesn't exist yet
+  if (!document.getElementById("next-qa-button")) {
+    // Replace the three individual buttons with a single button
+    const buttonsContainer = document.querySelector(".predefined-questions-container") || document.body;
+    
+    // Remove any existing predefined question buttons
+    const existingButtons = document.querySelectorAll("[id^='predefined-question']");
+    existingButtons.forEach(button => button.remove());
+    
+    // Create the new button
+    const nextButton = document.createElement("button");
+    nextButton.id = "next-qa-button";
+    nextButton.className = "action-button";
+    nextButton.textContent = `Next Question (1/${predefinedQA.length})`;
+    nextButton.addEventListener("click", handleNextQA);
+    
+    // Add the button to the container
+    buttonsContainer.appendChild(nextButton);
+  }
+});
   </script>
 </body>
 </html>
