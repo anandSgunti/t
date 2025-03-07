@@ -426,9 +426,7 @@
     }
 };
     
-// Add this code to your existing JavaScript
 
-// Array of predefined questions
 const predefinedQuestions = [
     "What is broken heart syndrome",
     "How does Broken Heart Syndrome affect the human heart?", // Animation will play for this question only
@@ -441,19 +439,26 @@ let currentQuestionIndex = 0;
 window.sendNextQuestion = function() {
     if (currentQuestionIndex < predefinedQuestions.length) {
         const question = predefinedQuestions[currentQuestionIndex];
-        document.getElementById("user-message").value = question;
-        
-        // Directly trigger animation only for the second question (index 1)
+        const userMessage = document.getElementById("user-message").value = question;
+        const chatResponseContainer = document.getElementById("chat-response-container");
+        const thinkingAnimation = document.getElementById("thinking-animation");
+
+    if (userMessage) {
+        // Clear previous response and set up UI
+        chatResponseContainer.innerHTML = "";
+        chatResponseContainer.style.display = "block";
+        thinkingAnimation.style.display = "flex";
+        chatResponseContainer.appendChild(thinkingAnimation);
+
+        // Trigger animation if message mentions "broken heart syndrome"
         if (currentQuestionIndex === 1) {
-            // We'll manually trigger the animation here
-            setTimeout(function() {
-                if (typeof window.playHeartAnimation === 'function') {
-                    window.playHeartAnimation();
-                }
-            }, 500); // Short delay to ensure the animation plays after the question is sent
+            window.playHeartAnimation(); // Use the window-exposed function
         }
+        getChatResponse(userMessage);
+        document.getElementById("user-message").value = "";
+    }
         
-        window.sendMessage();
+        
         currentQuestionIndex++;
         
         // If there are more questions, set up the next one
@@ -464,17 +469,7 @@ window.sendNextQuestion = function() {
     }
 };
 
-// Function to check if the current response is complete
-function checkResponseComplete() {
-    const thinkingAnimation = document.getElementById("thinking-animation");
-    if (thinkingAnimation.style.display === "none") {
-        // Response is complete, wait a moment before sending the next question
-        setTimeout(window.sendNextQuestion, 2000);
-    } else {
-        // Response still in progress, check again soon
-        setTimeout(checkResponseComplete, 1000);
-    }
-}
+
 
 // Button to start the sequence
 function addSequenceButton() {
@@ -497,6 +492,28 @@ function addSequenceButton() {
 
 // Call this when the page loads
 window.addEventListener('load', addSequenceButton);
+
+
+window.sendMessage = function() {
+    const userMessage = document.getElementById("user-message").value;
+    const chatResponseContainer = document.getElementById("chat-response-container");
+    const thinkingAnimation = document.getElementById("thinking-animation");
+
+    if (userMessage) {
+        // Clear previous response and set up UI
+        chatResponseContainer.innerHTML = "";
+        chatResponseContainer.style.display = "block";
+        thinkingAnimation.style.display = "flex";
+        chatResponseContainer.appendChild(thinkingAnimation);
+
+        // Trigger animation if message mentions "broken heart syndrome"
+        if (userMessage.toLowerCase().includes("broken heart syndrome")) {
+            window.playHeartAnimation(); // Use the window-exposed function
+        }
+        getChatResponse(userMessage);
+        document.getElementById("user-message").value = "";
+    }
+};
 
 // Make getChatResponse globally available as well
 window.getChatResponse = async function(userMessage) {
