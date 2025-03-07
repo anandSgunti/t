@@ -449,9 +449,9 @@ window.sendNextQuestionWithDisplay = function() {
         chatResponseContainer.innerHTML = "";
         chatResponseContainer.style.display = "block";
         
-        // Create and display the question bubble first
+        // Create and display the question bubble
         const questionBubble = document.createElement("div");
-        questionBubble.classList.add("user-bubble"); // Assuming you have styling for user messages
+        questionBubble.classList.add("user-bubble");
         questionBubble.style.backgroundColor = "#f0f0f0";
         questionBubble.style.padding = "10px 15px";
         questionBubble.style.borderRadius = "18px";
@@ -462,21 +462,31 @@ window.sendNextQuestionWithDisplay = function() {
         questionBubble.innerText = question;
         chatResponseContainer.appendChild(questionBubble);
         
-        // Then add the thinking animation
+        // Add the thinking animation
         thinkingAnimation.style.display = "flex";
         chatResponseContainer.appendChild(thinkingAnimation);
         
         // Trigger animation only for the second question
-        if (currentQuestionIndex === 1) {
-            if (typeof window.playHeartAnimation === 'function') {
-                window.playHeartAnimation();
-            }
+        if (currentQuestionIndex === 1 && typeof window.playHeartAnimation === 'function') {
+            window.playHeartAnimation();
         }
         
-        // Now get the response
-        getChatResponse(question);
-        
-        currentQuestionIndex++;
+        // Now get the response. Since getChatResponse is async,
+        // chain the next question after the response is complete.
+        window.getChatResponse(question)
+            .then(() => {
+                // After response processing, hide the thinking animation and prepare for the next question.
+                currentlyProcessing = false;
+                currentQuestionIndex++;
+                if (currentQuestionIndex < predefinedQuestions.length) {
+                    // Delay before sending the next question (e.g., 2000 milliseconds)
+                    setTimeout(window.sendNextQuestionWithDisplay, 2000);
+                }
+            })
+            .catch((err) => {
+                console.error("Error in getChatResponse:", err);
+                currentlyProcessing = false;
+            });
     }
 };
 
@@ -492,7 +502,7 @@ function addSequenceButton() {
     button.innerText = 'Learn About Broken Heart Syndrome';
     button.style.margin = '10px';
     button.style.padding = '12px 20px';
-    button.style.backgroundColor = '#FF4081'; // More engaging color for AR
+    button.style.backgroundColor = '#FF4081'; // Engaging color for AR
     button.style.color = 'white';
     button.style.border = 'none';
     button.style.borderRadius = '8px';
@@ -510,6 +520,7 @@ function addSequenceButton() {
     };
     
     button.onclick = function() {
+        // Reset state and start the sequence
         currentQuestionIndex = 0;
         currentlyProcessing = false;
         this.disabled = true;
@@ -529,7 +540,6 @@ if (document.readyState === 'complete') {
     window.addEventListener('load', addSequenceButton);
 }
 
-
 window.sendMessage = function() {
     const userMessage = document.getElementById("user-message").value;
     const chatResponseContainer = document.getElementById("chat-response-container");
@@ -542,16 +552,15 @@ window.sendMessage = function() {
         thinkingAnimation.style.display = "flex";
         chatResponseContainer.appendChild(thinkingAnimation);
 
-        // Trigger animation if message mentions "broken heart syndrome"
-        if (userMessage.toLowerCase().includes("broken heart syndrome")) {
-            window.playHeartAnimation(); // Use the window-exposed function
+        // Trigger heart animation if message mentions "broken heart syndrome"
+        if (userMessage.toLowerCase().includes("broken heart syndrome") && typeof window.playHeartAnimation === 'function') {
+            window.playHeartAnimation();
         }
-        getChatResponse(userMessage);
+        window.getChatResponse(userMessage);
         document.getElementById("user-message").value = "";
     }
 };
 
-// Make getChatResponse globally available as well
 window.getChatResponse = async function(userMessage) {
     const response = await fetch("https://ari-b6xq.onrender.com/chat", {
         method: "POST",
@@ -577,6 +586,7 @@ window.getChatResponse = async function(userMessage) {
     const thinkingAnimation = document.getElementById("thinking-animation");
     thinkingAnimation.style.display = "none";
 };
+
   </script>
 </body>
 </html>
