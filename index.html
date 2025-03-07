@@ -430,7 +430,7 @@
 sendMessage('Broken Heart Syndrome');
 
 window.sendMessage = async function(userMessage) {
-    const userMessage = userMessage || document.getElementById("user-message").value;
+    userMessage = userMessage || document.getElementById("user-message").value;
     const chatResponseContainer = document.getElementById("chat-response-container");
     const thinkingAnimation = document.getElementById("thinking-animation");
 
