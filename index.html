@@ -427,7 +427,6 @@
 };
 
 
-sendMessage('Broken Heart Syndrome');
 
 window.sendMessage = async function(userMessage) {
     userMessage = userMessage || document.getElementById("user-message").value;
@@ -476,6 +475,9 @@ window.getChatResponse = async function(userMessage) {
     const thinkingAnimation = document.getElementById("thinking-animation");
     thinkingAnimation.style.display = "none";
 };
+
+sendMessage('Broken Heart Syndrome');
+
   </script>
 </body>
 </html>
